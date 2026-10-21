@@ -1,0 +1,49 @@
+# Compiled Binaries & Installers (keep releases on GitHub Releases to stay under 100MB limit)
+binaries/
+*.apk
+*.aab
+*.exe
+*.msi
+
+# Desktop (Electron / Node)
+desktop/node_modules/
+desktop/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Android & Gradle
+android/.gradle/
+android/.kotlin/
+android/local.properties
+android/**/build/
+android/app/build/
+.gradle/
+build/
+
+# Signing keys & Certificates
+*.jks
+*.keystore
+*.p12
+*.pem
+
+# IDE & Editors
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# OS Artifacts
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Partial transfers & Logs
+*.part
+*.log

@@ -1,4 +1,4 @@
-const {
+﻿const {
   app,
   BrowserWindow,
   ipcMain,
@@ -27,7 +27,7 @@ let main,
   edgeFired = false,
   poll;
 const allowedReceived = new Set();
-let preferences = { language: null, autoReceive: true },
+let preferences = { language: null, autoReceive: true, method: "normal" },
   preferencesPath;
 app.setName("AppSEND");
 nativeTheme.themeSource = "dark";
@@ -140,6 +140,7 @@ app.whenReady().then(async () => {
   engine = new Engine({
     name: identity.name,
     folder: path.join(app.getPath("downloads"), "AppSEND"),
+    defaultMotion: preferences.method === "edge" ? "edge" : "plane",
     event: (type, data) => {
       if(type === "consent" && data.incoming && preferences.autoReceive) {
         send("incoming", {name:data.name,size:data.size,peer:data.peer});
@@ -239,6 +240,7 @@ ipcMain.handle("action", async (e, { type, value }) => {
           side: edgeSide,
           selected,
           armed,
+          method: preferences.method || "normal",
         };
       case "autoReceive":
         if(typeof value !== "boolean")throw Error("Invalid receive setting");
@@ -306,8 +308,20 @@ ipcMain.handle("action", async (e, { type, value }) => {
       case "select":
         selected = peers.find((p) => p.id === value)?.id || null;
         break;
+      case "method": {
+        const met = value === "edge" ? "edge" : "normal";
+        preferences.method = met;
+        armed = met === "edge";
+        setupEdges();
+        if (engine) engine.defaultMotion = met === "edge" ? "edge" : "plane";
+        await fs.promises.mkdir(path.dirname(preferencesPath), { recursive: true });
+        await fs.promises.writeFile(preferencesPath, JSON.stringify(preferences), "utf8");
+        return met;
+      }
       case "arm":
         armed = !!value;
+        preferences.method = armed ? "edge" : "normal";
+        if (engine) engine.defaultMotion = armed ? "edge" : "plane";
         setupEdges();
         break;
       case "side":

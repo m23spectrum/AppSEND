@@ -1,4 +1,4 @@
-package local.edgebeam
+﻿package local.edgebeam
 
 import android.app.Application
 import android.os.Build
@@ -30,7 +30,7 @@ data class Animation(
     val at: Long,
     val incoming: Boolean,
     val name: String,
-    val motion: String = "edge",
+    val motion: String = "plane",
     val departureShown: Boolean = false,
 )
 
@@ -55,7 +55,7 @@ data class UiState(
     val received: Received? = null,
     val history: List<Received> = emptyList(),
     val armed: Boolean = false,
-    val motion: String = "edge",
+    val motion: String = "plane",
     val language: String? = null,
 )
 

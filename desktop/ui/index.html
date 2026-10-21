@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'none'">
 <title>AppSEND</title><link rel="stylesheet" href="style.css"></head><body>
@@ -40,7 +40,7 @@
  <section class="file-area" id="drop"><div class="paper"><svg><use href="#file"/></svg><span>+</span></div><div class="file-copy"><h2 id="staged"></h2><p id="details"></p></div><button id="clear" class="icon-button" hidden><svg><use href="#close"/></svg></button></section>
  <div class="file-actions"><button id="choose" class="white-button" data-text="choose"></button><button id="clipboard" class="plain-button" data-text="paste"></button></div>
  <section class="devices"><div class="section-heading"><h2 data-text="devices"></h2><span id="device-count"></span></div><div id="peers"></div><p id="empty" data-text="empty"></p></section>
- <section class="edge-option"><div class="edge-row"><div class="edge-label"><span>⌁</span><label for="arm" data-text="edge"></label></div><label class="switch"><input id="arm" type="checkbox"><span></span></label></div><div id="edge-help" hidden><p data-text="edgeHelp"></p><select id="side"><option value="top" data-text="top"></option><option value="left" data-text="left"></option><option value="right" data-text="right"></option></select></div></section>
+ <section class="methods-section"><div class="section-heading"><h2 data-text="mode"></h2></div><div class="method-pills"><button type="button" id="method-normal" class="method-pill active"><span>↗</span><span data-text="normal"></span></button><button type="button" id="method-edge" class="method-pill"><span>⌁</span><span data-text="phoneEdge"></span></button></div><p id="method-hint" class="method-hint" data-text="normalHint"></p><div id="edge-help" hidden><p data-text="edgeHelp"></p><select id="side"><option value="top" data-text="top"></option><option value="left" data-text="left"></option><option value="right" data-text="right"></option></select></div></section>
  <div class="send-row"><button id="send" class="send-button" disabled><span data-text="send"></span><span>↗</span></button><button id="cancel" class="text-button" hidden data-text="cancel"></button></div>
  </section>
  <section id="receive-view" class="view" hidden><div class="title-row"><h1 data-text="receiveTitle"></h1><span class="step">↙</span></div><p id="receive-help" class="subtitle" data-text="receiveHint"></p><div class="receive-visual"><div class="receiver-icon"><svg><use href="#device"/></svg></div><h2 id="receive-name"></h2><p class="online"><i></i><span data-text="online"></span></p></div></section>

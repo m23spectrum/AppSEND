@@ -1,4 +1,4 @@
-package local.edgebeam
+﻿package local.edgebeam
 
 import android.content.Context
 import android.net.Uri
@@ -420,7 +420,7 @@ class Engine(private val app: BeamApp) {
         s.offer =
             msg(
                 "offer",
-                "motion" to if (motion in listOf("plane", "grab")) "plane" else "edge",
+                "motion" to if (motion in listOf("plane", "grab", "normal")) "plane" else "edge",
                 "senderPlatform" to "Android",
                 "id" to UUID.randomUUID().toString(),
                 "name" to source.name,

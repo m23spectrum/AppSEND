@@ -1,4 +1,4 @@
-const $ = (id) => document.getElementById(id),
+﻿const $ = (id) => document.getElementById(id),
   action = (type, value) => window.beam.action(type, value);
 let autoReceive = true;
 let language = null,
@@ -75,7 +75,7 @@ function renderLanguage() {
     e.textContent = t(e.dataset.text);
   $("receive-help").textContent=t(autoReceive?"receiveHint":"receiveManualHint");
   $("language-button").textContent = (language || "en").toUpperCase();
-  $("arm").setAttribute("aria-label", t("edge"));
+  if ($("arm")) $("arm").setAttribute("aria-label", t("edge")); if ($("method-hint")) $("method-hint").textContent = t($("method-hint").dataset.text || "normalHint");
   $("close-received").setAttribute("aria-label", t("close"));
   $("side").setAttribute("aria-label", t("edge"));
   $("status").textContent = translatedStatus(lastStatus);
@@ -99,12 +99,21 @@ $("auto-receive").onchange=e=>{autoReceive=e.target.checked;action("autoReceive"
 $("language-button").onclick = () => $("language-dialog").showModal();
 for (const type of ["choose", "clipboard", "send", "cancel", "clear"])
   $(type).onclick = () => action(type);
-$("arm").onchange = (e) => {
-  const armed = e.target.checked;
-  $("edge-help").hidden = !armed;
-  $("edge-indicator").classList.toggle("armed", armed);
-  action("arm", armed);
-};
+let currentMethod = "normal";
+function setMethod(method) {
+  currentMethod = method === "edge" ? "edge" : "normal";
+  if ($("method-normal")) $("method-normal").classList.toggle("active", currentMethod === "normal");
+  if ($("method-edge")) $("method-edge").classList.toggle("active", currentMethod === "edge");
+  if ($("edge-help")) $("edge-help").hidden = currentMethod !== "edge";
+  if ($("edge-indicator")) $("edge-indicator").classList.toggle("armed", currentMethod === "edge");
+  if ($("method-hint")) {
+    $("method-hint").dataset.text = currentMethod === "normal" ? "normalHint" : "edgeHelp";
+    $("method-hint").textContent = t($("method-hint").dataset.text);
+  }
+  action("method", currentMethod);
+}
+if ($("method-normal")) $("method-normal").onclick = () => setMethod("normal");
+if ($("method-edge")) $("method-edge").onclick = () => setMethod("edge");
 $("side").onchange = (e) => action("side", e.target.value);
 $("approve").onclick = () => {
   pendingConsent = null;
@@ -241,7 +250,7 @@ action("snapshot").then((s) => {
   $("auto-receive").checked=autoReceive;
   selected = s.selected;
   peers = s.peers;
-  $("arm").checked = !!s.armed;
+  setMethod(s.method || (s.armed ? "edge" : "normal"));
   staged = s.staged;
   $("identity").textContent = s.name;
   $("receive-name").textContent = s.name;

@@ -1,4 +1,4 @@
-package local.edgebeam
+﻿package local.edgebeam
 
 import android.content.*
 import android.net.Uri
@@ -69,8 +69,8 @@ class MainActivity : ComponentActivity() {
         val savedLanguage =
             preferences.getString("language", null)?.takeIf { it in listOf("ru", "en") }
         val savedMotion =
-            preferences.getString("motion", "edge").takeIf { it in listOf("plane", "grab") }
-                ?: "edge"
+            preferences.getString("motion", "plane")?.takeIf { it in listOf("plane", "normal", "grab", "edge") }
+                ?: "plane"
         app.state.update {
             it.copy(
                 language = savedLanguage,
@@ -190,7 +190,7 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                         mode = { value ->
-                            if (value in listOf("plane", "edge", "grab")) {
+                            if (value in listOf("plane", "normal", "edge", "grab")) {
                                 preferences.edit { putString("motion", value) }
                                 app.state.update {
                                     it.copy(motion = value, armed = value == "edge")

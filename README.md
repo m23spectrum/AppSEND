@@ -1,4 +1,4 @@
-<p align="center">
+﻿<p align="center">
   <img src="desktop/assets/icon.png" width="120" height="120" alt="AppSEND Logo" />
 </p>
 
@@ -32,6 +32,7 @@ Traditional sharing tools often rely on external relay servers, online accounts,
 
 ## ✨ Features
 
+- **⚡ Standard Mode (Instant Card Throw)**: Tap Send on Android or Windows to transfer immediately with a smooth card flight animation across screens.
 - **✋ Gesture Grab Transfer (Android → Windows)**: Select a file, point the phone camera at your hand, make a fist to grab the file, and release your palm to launch it straight to your PC. Powered by on-device Google MediaPipe vision models with zero frames stored or transmitted.
 - **↗️ Card Swipe Throw**: Stage a file and flick the card upward with an organic fling animation that transfers directly to your desktop.
 - **🖥️ Screen Edge Proximity**: Bring your phone top-down toward the monitor bezel or dock a file along the top desktop edge to trigger instant transfer.

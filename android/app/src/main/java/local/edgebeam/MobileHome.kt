@@ -1,4 +1,4 @@
-package local.edgebeam
+﻿package local.edgebeam
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -61,26 +61,6 @@ internal fun MobileHome(
                         color = Color.White,
                         modifier = Modifier.weight(1f).padding(start = 10.dp),
                     )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.05f))
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                    ) {
-                        Box(
-                            Modifier.size(6.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(if (state.running) Color(0xff4ade80) else Color.White.copy(alpha = 0.3f))
-                        )
-                        Text(
-                            t(if (state.running) "onlineShort" else "offline"),
-                            color = Muted,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                        )
-                    }
                     IconButton(
                         onClick = settings,
                         modifier = Modifier.semantics { contentDescription = t("settings") },
@@ -144,6 +124,10 @@ internal fun MobileHome(
 
                         if (page == "send")
                             item("file") { MobileFilePicker(state, busy, actions, lang) }
+                        if (page == "send")
+                            item("methods") {
+                                MobileMethods(state.motion, !busy, actions.mode, lang)
+                            }
 
                         if (page == "receive")
                             item("identity") {
@@ -273,10 +257,6 @@ internal fun MobileHome(
                                     }
                                 }
                             }
-                            if (page == "send")
-                                item("methods") {
-                                    MobileMethods(state.motion, !busy, actions.mode, lang)
-                                }
                         } else {
                             if (state.history.isEmpty())
                                 item("no-history") {
@@ -528,7 +508,7 @@ private fun MobileMethods(mode: String, enabled: Boolean, choose: (String) -> Un
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(UiText.text(lang, "mode"), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("edge" to "phoneEdge", "plane" to "plane", "grab" to "grab").forEach { (value, key) ->
+            listOf("normal" to "normal", "plane" to "plane", "grab" to "grab", "edge" to "phoneEdge").forEach { (value, key) ->
                 val selected = mode == value
                 val color by
                     animateColorAsState(
@@ -551,8 +531,12 @@ private fun MobileMethods(mode: String, enabled: Boolean, choose: (String) -> Un
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (value == "plane") FileMark(true, Modifier.size(20.dp), ink)
-                    else Glyph(value, Modifier.size(20.dp), ink)
+                    when (value) {
+                        "normal" -> Glyph("send", Modifier.size(20.dp), ink)
+                        "plane" -> FileMark(true, Modifier.size(20.dp), ink)
+                        "grab" -> Glyph("grab", Modifier.size(20.dp), ink)
+                        else -> Glyph("edge", Modifier.size(20.dp), ink)
+                    }
                     Text(
                         UiText.text(lang, key),
                         fontSize = 12.sp,
@@ -573,6 +557,7 @@ private fun MobileMethods(mode: String, enabled: Boolean, choose: (String) -> Un
                 UiText.text(
                     lang,
                     when (value) {
+                        "normal" -> "normalHint"
                         "grab" -> "grabHint"
                         "plane" -> "planeHint"
                         else -> "phoneEdgeHint"

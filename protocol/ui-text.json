@@ -98,7 +98,9 @@
     "grabTitle": "Close, then open your hand",
     "grabReset": "Release captured file",
     "onlineShort": "Online",
-    "pasteShort": "Paste from clipboard"
+    "pasteShort": "Paste from clipboard",
+    "normal": "Standard",
+    "normalHint": "Tap Send for instant direct transfer with flying card animation."
   },
   "ru": {
     "transfer": "Отправить файл",
@@ -199,7 +201,9 @@
     "grabTitle": "Сожмите и раскройте ладонь",
     "grabReset": "Отменить захват",
     "onlineShort": "В сети",
-    "pasteShort": "Вставить из буфера"
+    "pasteShort": "Вставить из буфера",
+    "normal": "Обычный",
+    "normalHint": "Нажмите «Отправить» для быстрой передачи с анимацией полёта карточки."
   },
   "statuses": {
     "Starting LAN services…": "Запуск…",

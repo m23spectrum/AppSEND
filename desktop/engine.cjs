@@ -1,4 +1,4 @@
-const http = require("node:http"),
+﻿const http = require("node:http"),
   fs = require("node:fs"),
   fsp = require("node:fs/promises"),
   path = require("node:path"),
@@ -39,10 +39,10 @@ function validateOffer(m) {
   );
 }
 class Engine {
-  constructor({ name, folder, event }) {
+  constructor({ name, folder, event, defaultMotion = "plane" }) {
     this.name = name;
     this.folder = folder;
-    this.event = event;
+    this.event = event; this.defaultMotion = defaultMotion;
     this.sessions = new Set();
     this.active = null;
     this.staged = null;
@@ -114,7 +114,7 @@ class Engine {
     s.remotePort = peer.port;
     ws.on("open", () => this.hello(s));
     s.onReady = () =>
-      this.staged ? this.offer(s) : this.send(s, { type: "knock" });
+      this.staged ? this.offer(s, this.defaultMotion || "plane") : this.send(s, { type: "knock", motion: this.defaultMotion || "plane" });
   }
   attach(ws, host) {
     if (this.sessions.size >= 8) {
@@ -335,7 +335,7 @@ class Engine {
         throw Error("Unknown control message");
     }
   }
-  offer(s, motion = "edge") {
+  offer(s, motion = this.defaultMotion || "plane") {
     if (this.active) throw Error("Busy");
     s.source = this.staged;
     s.offer = {

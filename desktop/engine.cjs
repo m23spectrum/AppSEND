@@ -1,4 +1,4 @@
-﻿const http = require("node:http"),
+const http = require("node:http"),
   fs = require("node:fs"),
   fsp = require("node:fs/promises"),
   path = require("node:path"),
@@ -17,6 +17,43 @@ const {
 } = require("./crypto.cjs");
 const CHUNK = 262144,
   MAX_RECORD = CHUNK + 37;
+// TCP chunks can split any header or payload; copy fragmented records only once.
+async function* readRecords(source) {
+  const header = Buffer.alloc(4);
+  let headerBytes = 0, body = null, bodyBytes = 0, length = 0;
+  for await (const chunk of source) {
+    let offset = 0;
+    while (offset < chunk.length) {
+      if (headerBytes < 4) {
+        const count = Math.min(4 - headerBytes, chunk.length - offset);
+        chunk.copy(header, headerBytes, offset, offset + count);
+        headerBytes += count;
+        offset += count;
+        if (headerBytes < 4) continue;
+        length = header.readUInt32BE();
+        if (length < 37 || length > MAX_RECORD) throw Error("Invalid record size");
+        if (chunk.length - offset >= length) {
+          yield chunk.subarray(offset, offset + length);
+          offset += length;
+          headerBytes = 0;
+          continue;
+        }
+        body = Buffer.allocUnsafe(length);
+        bodyBytes = 0;
+      }
+      const count = Math.min(length - bodyBytes, chunk.length - offset);
+      chunk.copy(body, bodyBytes, offset, offset + count);
+      bodyBytes += count;
+      offset += count;
+      if (bodyBytes === length) {
+        yield body;
+        body = null;
+        headerBytes = 0;
+      }
+    }
+  }
+  if (headerBytes) throw Error("Incomplete upload");
+}
 function safeName(name) {
   return (
     String(name)
@@ -475,56 +512,48 @@ class Engine {
     let out;
     try {
       out = await fsp.open(tmp, "wx");
-      let buf = Buffer.alloc(0),
-        index = 0,
+      let index = 0,
         total = 0,
         final = false,
         last = 0;
       const hash = crypto.createHash("sha256");
-      for await (const chunk of req) {
-        buf = Buffer.concat([buf, chunk]);
-        while (buf.length >= 4) {
-          const n = buf.readUInt32BE();
-          if (n < 37 || n > MAX_RECORD) throw Error("Invalid record size");
-          if (buf.length < n + 4) break;
-          if (final) throw Error("Data after final record");
-          const data = open(s.key, buf.subarray(4, n + 4));
-          buf = buf.subarray(n + 4);
-          if (data.readBigUInt64BE(1) !== BigInt(index++))
-            throw Error("Out of order record");
-          if (data[0] === 1) {
-            if (
-              data.length !== 41 ||
-              total !== s.offer.size ||
-              !crypto.timingSafeEqual(data.subarray(9), hash.digest())
-            )
-              throw Error("Integrity check failed");
-            final = true;
-          } else if (data[0] === 0) {
-            const part = data.subarray(9);
-            total += part.length;
-            if (total > s.offer.size)
-              throw Error("Exceeded advertised file size");
-            hash.update(part);
-            let written = 0;
-            while (written < part.length) {
-              const result = await out.write(
-                part,
-                written,
-                part.length - written,
-              );
-              if (result.bytesWritten === 0)
-                throw Error("Could not write received data");
-              written += result.bytesWritten;
-            }
-          } else throw Error("Unknown record");
-          if (Date.now() - last > 80) {
-            this.event("progress", { bytes: total, size: s.offer.size });
-            last = Date.now();
+      for await (const packet of readRecords(req)) {
+        if (final) throw Error("Data after final record");
+        const data = open(s.key, packet);
+        if (data.readBigUInt64BE(1) !== BigInt(index++))
+          throw Error("Out of order record");
+        if (data[0] === 1) {
+          if (
+            data.length !== 41 ||
+            total !== s.offer.size ||
+            !crypto.timingSafeEqual(data.subarray(9), hash.digest())
+          )
+            throw Error("Integrity check failed");
+          final = true;
+        } else if (data[0] === 0) {
+          const part = data.subarray(9);
+          total += part.length;
+          if (total > s.offer.size)
+            throw Error("Exceeded advertised file size");
+          hash.update(part);
+          let written = 0;
+          while (written < part.length) {
+            const result = await out.write(
+              part,
+              written,
+              part.length - written,
+            );
+            if (result.bytesWritten === 0)
+              throw Error("Could not write received data");
+            written += result.bytesWritten;
           }
+        } else throw Error("Unknown record");
+        if (Date.now() - last > 80) {
+          this.event("progress", { bytes: total, size: s.offer.size });
+          last = Date.now();
         }
       }
-      if (!final || buf.length) throw Error("Incomplete upload");
+      if (!final) throw Error("Incomplete upload");
       await out.sync();
       await out.close();
       out = null;
@@ -563,4 +592,4 @@ class Engine {
     this.server.close();
   }
 }
-module.exports = { Engine, safeName, validateOffer };
+module.exports = { Engine, safeName, validateOffer, readRecords };

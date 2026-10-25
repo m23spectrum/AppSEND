@@ -43,7 +43,9 @@ function open(key, bytes) {
   if (bytes.length < 28) throw Error("Truncated encrypted record");
   const d = c.createDecipheriv("aes-256-gcm", key, bytes.subarray(0, 12));
   d.setAuthTag(bytes.subarray(-16));
-  return Buffer.concat([d.update(bytes.subarray(12, -16)), d.final()]);
+  const plain = d.update(bytes.subarray(12, -16));
+  d.final(); // Authenticate before returning any plaintext.
+  return plain;
 }
 function sas(key) {
   return String(
@@ -55,9 +57,16 @@ function record(key, index, data, final = false) {
   const h = Buffer.alloc(9);
   h[0] = final ? 1 : 0;
   h.writeBigUInt64BE(BigInt(index), 1);
-  const body = seal(key, Buffer.concat([h, data])),
-    size = Buffer.alloc(4);
-  size.writeUInt32BE(body.length);
-  return Buffer.concat([size, body]);
+  const packet = Buffer.allocUnsafe(data.length + 41);
+  packet.writeUInt32BE(packet.length - 4);
+  const nonce = packet.subarray(4, 16);
+  c.randomFillSync(nonce);
+  const cipher = c.createCipheriv("aes-256-gcm", key, nonce);
+  let offset = 16;
+  for (const part of [cipher.update(h), cipher.update(data), cipher.final(), cipher.getAuthTag()]) {
+    part.copy(packet, offset);
+    offset += part.length;
+  }
+  return packet;
 }
 module.exports = { identity, derive, seal, open, sas, record, commit };

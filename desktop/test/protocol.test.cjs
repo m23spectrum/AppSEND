@@ -267,7 +267,7 @@ async function authorizedClient(f, t) {
   await wait("ready");
   return { key, token, id, ws, send };
 }
-for (const scenario of ["tampered", "truncated", "sequence", "hash"])
+for (const scenario of ["tampered", "truncated", "sequence", "hash", "trailing", "duplicate-final"])
   test(
     `reject ${scenario} upload and remove partial file`,
     { timeout: 6000 },
@@ -294,6 +294,9 @@ for (const scenario of ["tampered", "truncated", "sequence", "hash"])
             true,
           ),
         ]);
+      if (scenario === "trailing") bytes = Buffer.concat([bytes, Buffer.from([0xff])]);
+      if (scenario === "duplicate-final")
+        bytes = Buffer.concat([bytes, record(a.key, 2, crypto.createHash("sha256").update("abc").digest(), true)]);
       await new Promise((resolve) => {
         const q = http.request(
           {

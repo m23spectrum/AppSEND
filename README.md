@@ -5,12 +5,12 @@
 <h1 align="center">AppSEND</h1>
 
 <p align="center">
-  <b>Fast, local, peer-to-peer file and text transfer between Android and Windows. Zero cloud. Zero accounts. Fully encrypted.</b>
+  <b>Fast, local, peer-to-peer file and text transfer between Android, Windows and macOS (preview). Zero cloud. Zero accounts. Fully encrypted.</b>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" />
-  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20Windows-brightgreen.svg" alt="Platforms" />
+  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20Windows%20%7C%20macOS%20preview-brightgreen.svg" alt="Platforms" />
   <img src="https://img.shields.io/badge/Android-Kotlin%20%7C%20Compose-purple.svg" alt="Android Stack" />
   <img src="https://img.shields.io/badge/Desktop-Electron%20%7C%20Node.js-informational.svg" alt="Desktop Stack" />
   <img src="https://img.shields.io/badge/Security-X25519%20%7C%20AES--256--GCM-success.svg" alt="Security" />
@@ -27,6 +27,48 @@ Traditional sharing tools often rely on external relay servers, online accounts,
 <p align="center">
   <img src="preview-en.png" width="720" alt="AppSEND Desktop Preview" />
 </p>
+
+---
+
+## macOS support (community preview)
+
+This fork provides macOS builds for **Apple Silicon (M1 and newer)** and **Intel Macs**, using the existing Electron desktop client with macOS integration.
+
+**[Download macOS DMGs](https://github.com/m23spectrum/AppSEND/releases/tag/v1.6.2-macos-preview.1)**
+
+| Mac | Download |
+| --- | --- |
+| Apple Silicon (arm64) | [Apple Silicon DMG](https://github.com/m23spectrum/AppSEND/releases/download/v1.6.2-macos-preview.1/AppSEND-1.6.2-mac.1-macOS-arm64.dmg) |
+| Intel (x64) | [Intel DMG](https://github.com/m23spectrum/AppSEND/releases/download/v1.6.2-macos-preview.1/AppSEND-1.6.2-mac.1-macOS-x64.dmg) |
+
+### What is included
+
+- Local encrypted file and text transfers compatible with the existing Android client.
+- Device discovery that identifies the computer as **macOS**.
+- Native macOS application, File, Edit and Window menus, plus the system font.
+- **Cmd+O** to choose a file, **Cmd+Shift+V** to stage clipboard text and **Cmd+Enter** to send to the selected device.
+- Closing the window keeps receiving active; clicking the Dock icon reopens it. **Cmd+Q** exits.
+- Edge overlays positioned within the display work area, avoiding the menu bar and Dock.
+- Received files saved to **Downloads/AppSEND**.
+
+### Install and connect
+
+1. Download the DMG matching your Mac, open it and copy AppSEND to Applications.
+2. Launch AppSEND and allow Local Network access if macOS requests it.
+3. Open AppSEND on Android and connect both devices to the same local network.
+4. Select the discovered device and send a file or text.
+
+These preview builds are **ad-hoc signed and not notarized by Apple**. macOS may require an explicit approval in Privacy & Security before opening them.
+
+### Source and validation
+
+The macOS implementation is on the [`add-macos-support` branch](https://github.com/m23spectrum/AppSEND/tree/add-macos-support); this fork's `main` branch retains the upstream application code plus this README. The changes have been proposed upstream in [PR #1](https://github.com/Murk1ins-ka/AppSEND/pull/1).
+
+All **21 Node tests** passed on the macOS branch. The packaged Intel app was launched on macOS and tested with encrypted transfers. A Xiaomi 13T running Android 16 / HyperOS 3 sent a generated PNG from Xiaomi Gallery through Android AppSEND to the Mac over LAN; the source and received SHA-256 matched.
+
+The Apple Silicon bundle was built and its signature verified, but **has not been run on Apple Silicon hardware**. A global hand gesture over another Android app is **not implemented** by this port.
+
+See [MACOS.md on the macOS branch](https://github.com/m23spectrum/AppSEND/blob/add-macos-support/MACOS.md) for build details and validation limits.
 
 ---
 
@@ -131,6 +173,20 @@ npm test
 # Build 64-bit NSIS Windows installer
 npm run dist
 ```
+
+### macOS Desktop App
+
+Build on macOS with Node.js and npm. Clone the macOS branch explicitly:
+
+```sh
+git clone --branch add-macos-support https://github.com/m23spectrum/AppSEND.git
+cd AppSEND/desktop
+npm ci
+npm test
+npm run dist:mac
+```
+
+The DMGs for Intel and Apple Silicon are generated in `desktop/dist/`. The default macOS configuration uses ad-hoc signing for testing; Developer ID signing and notarization require your own Apple configuration.
 
 ### Android App
 

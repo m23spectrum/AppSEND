@@ -8,6 +8,8 @@ const {
   screen,
   nativeTheme,
   Menu,
+  Tray,
+  nativeImage,
 } = require("electron");
 const path = require("node:path"),
   fs = require("node:fs"),
@@ -15,6 +17,7 @@ const path = require("node:path"),
   crypto = require("node:crypto");
 const { Engine } = require("./engine.cjs");
 const { Discovery } = require("./discovery.cjs");
+let tray, quick, quickFile = null, quickSending = false;
 let main,
   overlay,
   edge,
@@ -34,8 +37,9 @@ let preferences = { language: null, autoReceive: true, method: "normal" },
 app.setName("AppSEND");
 nativeTheme.themeSource = "dark";
 function send(type, data) {
-  if (main && !main.isDestroyed())
-    main.webContents.send("state", { type, data });
+  for (const window of [main, quick])
+    if (window && !window.isDestroyed())
+      window.webContents.send("state", { type, data });
 }
 function trigger() {
   if (!selected || !engine?.staged || engine.active) return;
@@ -87,6 +91,43 @@ function setupEdges() {
   edge.webContents.send("edge", { side: edgeSide });
   if (armed) edge.showInactive();
   else edge.hide();
+}
+function showQuick(focus = true) {
+  const anchor = tray.getBounds();
+  const area = screen.getDisplayNearestPoint({ x: anchor.x, y: anchor.y }).workArea;
+  quick.setBounds({
+    x: Math.max(area.x, Math.min(Math.round(anchor.x + anchor.width / 2 - 160), area.x + area.width - 320)),
+    y: area.y + 4, width: 320, height: 290,
+  });
+  if (focus) { quick.show(); quick.focus(); }
+  else quick.showInactive();
+}
+function setupTray() {
+  const image = nativeImage.createFromPath(path.join(__dirname, "assets", "trayTemplate.png")).resize({ width: 18, height: 18 });
+  image.setTemplateImage(true);
+  tray = new Tray(image);
+  tray.setToolTip("AppSEND — Drop a file to send / Перетащите файл для отправки");
+  quick = makeWindow("quick.html", {
+    width: 320, height: 290, minWidth: 320, minHeight: 290,
+    frame: false, resizable: false, minimizable: false, maximizable: false,
+    fullscreenable: false, skipTaskbar: true, alwaysOnTop: true,
+    transparent: true, backgroundColor: "#00000000", vibrancy: "popover",
+    visualEffectState: "active", roundedCorners: true,
+  });
+  quick.on("blur", () => quick.hide());
+  quick.on("close", event => { if (!quitting) { event.preventDefault(); quick.hide(); } });
+  tray.on("click", () => quick.isVisible() ? quick.hide() : showQuick());
+  tray.on("drag-enter", () => showQuick(false));
+  tray.on("drop-files", (_event, files) => {
+    showQuick();
+    if (files.length !== 1) { quickFile = null; send("quick-file", null); send("error", "Drop one file at a time / Перетащите один файл"); return; }
+    quickFile = files[0];
+    send("quick-file", path.basename(quickFile));
+  });
+  tray.on("right-click", () => tray.popUpContextMenu(Menu.buildFromTemplate([
+    { label: "Open AppSEND / Открыть AppSEND", click: () => { main.show(); main.focus(); } },
+    { type: "separator" }, { role: "quit" },
+  ])));
 }
 app.whenReady().then(async () => {
   if (!app.requestSingleInstanceLock()) {
@@ -158,6 +199,7 @@ app.whenReady().then(async () => {
     minHeight: 1,
   });
   edge.setAlwaysOnTop(true, "screen-saver");
+  if (process.platform === "darwin") setupTray();
   const settings = path.join(app.getPath("userData"), "identity.json");
   let identity;
   try {
@@ -253,7 +295,7 @@ app.whenReady().then(async () => {
   }, 40);
 });
 function trusted(e) {
-  return [main?.webContents, edge?.webContents].includes(e.sender);
+  return [main?.webContents, edge?.webContents, quick?.webContents].includes(e.sender);
 }
 async function handleAction(e, { type, value }) {
   if (!trusted(e)) throw Error("Untrusted renderer");
@@ -262,6 +304,8 @@ async function handleAction(e, { type, value }) {
       case "snapshot":
         return {
           peers,
+          quickFileName: quickFile ? path.basename(quickFile) : null,
+          busy: quickSending || !!engine?.active,
           name: os.hostname(),
           staged: engine?.publicStage(),
           ready: !!engine?.server?.listening,
@@ -272,6 +316,35 @@ async function handleAction(e, { type, value }) {
           armed,
           method: preferences.method || "normal",
         };
+      case "quick-open":
+        quick?.hide(); main.show(); main.focus();
+        break;
+      case "quick-send": {
+        if (e.sender !== quick?.webContents) throw Error("Untrusted quick sender");
+        if (quickSending || engine?.active) throw Error("A transfer is already active");
+        const peer = peers.find(p => p.id === value?.peerId);
+        if (!peer) throw Error("Selected device is no longer on the LAN");
+        quickSending = true;
+        try {
+          let file = value.path === undefined ? quickFile : value.path;
+          if (file === "") throw Error("Cannot read dropped file");
+          if (!file) {
+            const result = await dialog.showOpenDialog(quick, { properties: ["openFile"] });
+            if (result.canceled) return;
+            file = result.filePaths[0];
+          }
+          if (typeof file !== "string") throw Error("Invalid file");
+          await engine.stageFile(file);
+          if (!peers.some(p => p.id === peer.id)) throw Error("Selected device is no longer on the LAN");
+          selected = peer.id;
+          send("quick-sending", peer.name);
+          engine.connect(peer);
+          quickFile = null;
+          send("quick-file", null);
+          return { started: true };
+        } finally { quickSending = false; }
+        break;
+      }
       case "autoReceive":
         if(typeof value !== "boolean")throw Error("Invalid receive setting");
         preferences.autoReceive=value;
@@ -393,6 +466,7 @@ app.on("activate", () => {
 app.on("window-all-closed", () => app.quit());
 app.on("before-quit", () => {
   quitting = true;
+  tray?.destroy();
   clearInterval(poll);
   discovery?.close();
   engine?.close();

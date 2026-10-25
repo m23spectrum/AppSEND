@@ -22,6 +22,9 @@ Developer ID configuration and configure notarization.
 
 - Native system font and standard macOS window frame.
 - Native application, File, Edit and Window menus.
+- Menu bar icon with a compact device panel. Drag a file onto a device, or drop
+  it on the menu bar icon and then choose a device. One file per transfer.
+- The panel opens when dragging over the icon; right-click offers Open and Quit.
 - Cmd+O chooses a file; Cmd+Shift+V stages clipboard text; Cmd+Return sends it.
 - Closing the window keeps receiving active; the Dock icon reopens the window.
   Cmd+Q exits and closes network services.

@@ -51,3 +51,11 @@ AppSEND, which sent it to this Mac app. SHA-256 matched the source:
 Apple Silicon was built and its bundle signature checked, but it was not run on
 Apple Silicon hardware. Camera gesture recognition and a gesture over another
 Android app were not validated by these transfer checks.
+
+## Personal quick-share behavior
+
+The personal branch approves sending the already staged item without a second
+dialog, including when a LAN peer requests it. Any reachable LAN peer may
+request that prepared item; staging is not device pairing. Incoming transfers
+still follow the automatic-receive setting. Android system permission requests
+are separate and remain in place.

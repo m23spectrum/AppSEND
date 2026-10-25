@@ -11,8 +11,8 @@ android {
         applicationId = "local.appsend"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "1.6.1"
+        versionCode = 10
+        versionName = "1.6.3-personal"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures {

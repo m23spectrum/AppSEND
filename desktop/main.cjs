@@ -214,6 +214,11 @@ app.whenReady().then(async () => {
     folder: path.join(app.getPath("downloads"), "AppSEND"),
     defaultMotion: preferences.method === "edge" ? "edge" : "plane",
     event: (type, data) => {
+      if (type === "consent" && !data.incoming) {
+        send("outgoing", data);
+        engine.approve();
+        return;
+      }
       if(type === "consent" && data.incoming && preferences.autoReceive) {
         send("incoming", {name:data.name,size:data.size,peer:data.peer});
         engine.approve();
@@ -236,7 +241,6 @@ app.whenReady().then(async () => {
       if (type === "done" && data.path) allowedReceived.add(data.path);
       if (type === "error") overlay.hide();
       send(type, data);
-      if (type === "consent" && !data.incoming && data.initiated) engine.approve();
       if (type === "consent" && (data.incoming || !data.initiated)) {
         main.show();
         main.focus();

@@ -216,7 +216,7 @@ class EngineTest {
     @Test fun windowsPlaneToAndroid() = runBlocking { nodeRoundTrip("send", "plane") }
 
     @Test
-    fun remoteRequestCannotSilentlyReadStagedFile() = runBlocking {
+    fun remoteRequestSendsPreparedFileWithoutASecondConfirmation() = runBlocking {
         val sender = host()
         val receiver = host()
         val receiverApproval = approve(receiver)
@@ -224,16 +224,12 @@ class EngineTest {
         try {
             sender.engine.start()
             receiver.engine.start()
-            sender.engine.stageText("Requires owner's permission")
+            sender.engine.stageText("Already prepared by the owner")
             select(receiver, sender.engine.listeningPort)
             request = launch { receiver.engine.trigger() }
-            val consent = withTimeout(10000) { sender.app.state.mapNotNull { it.consent }.first() }
-            assertFalse(consent.incoming)
-            delay(250)
-            assertNull(receiver.app.state.value.received)
-            assertNull(sender.app.state.value.animation)
-            sender.engine.approve()
-            assertEquals("Requires owner's permission", received(receiver).text)
+            assertEquals("Already prepared by the owner", received(receiver).text)
+            assertNull(sender.app.state.value.consent)
+
         } finally {
             receiverApproval.cancel()
             sender.engine.close()

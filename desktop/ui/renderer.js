@@ -203,6 +203,15 @@ window.beam.onState(({ type, data }) => {
     busy=true;$("cancel").hidden=false;
     lastStatus="Receiving…";$("status").textContent=translatedStatus(lastStatus);renderStage();
   }
+  if (type === "outgoing") {
+    busy = true;
+    pendingConsent = null;
+    $("consent").close();
+    $("cancel").hidden = false;
+    lastStatus = "Waiting for receiver to accept…";
+    $("status").textContent = translatedStatus(lastStatus);
+    renderStage();
+  }
   if (type === "consent") {
     busy = true;
     pendingConsent = data;

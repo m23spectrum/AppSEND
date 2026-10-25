@@ -40,7 +40,7 @@ for (const [platform, label] of [['darwin', 'macOS'], ['win32', 'Windows'], ['li
 for (const platform of ['darwin', 'win32']) {
   test(`${platform}: window close, Dock activation and quit lifecycle`, async () => {
     const windows = [];
-    let tray; const staged = [], connected = [];
+    let tray, onEngineEvent; let approvals = 0; const staged = [], connected = [];
     class Tray extends EventEmitter { constructor() { super(); tray = this; } getBounds() { return {x:1000,y:0,width:22,height:25}; } setToolTip() {} popUpContextMenu() {} destroy() { this.destroyed = true; } }
     const nativeImage = { createFromPath: () => ({ resize() { return this; }, setTemplateImage() {} }) };
     const app = new EventEmitter();
@@ -58,7 +58,7 @@ for (const platform of ['darwin', 'win32']) {
       focus() {} setIgnoreMouseEvents() {} setAlwaysOnTop() {}
       setBounds(bounds) { this.bounds = bounds; } isDestroyed() { return false; }
     }
-    class Engine { async start() { return 12345; } async stageFile(file) { staged.push(file); } connect(peer) { connected.push(peer); this.active = {}; } close() {} }
+    class Engine { constructor(options) { onEngineEvent = options.event; } approve() { approvals++; } async start() { return 12345; } async stageFile(file) { staged.push(file); } connect(peer) { connected.push(peer); this.active = {}; } close() {} }
     const actions = {};
     let menu;
     load('main.cjs', {
@@ -68,6 +68,13 @@ for (const platform of ['darwin', 'win32']) {
     }, platform);
     await new Promise(setImmediate);
     const main = windows[0];
+    const deliveredEvents = [];
+    main.webContents.send = (channel, message) => deliveredEvents.push(message);
+    onEngineEvent('consent', {incoming:false,initiated:false,name:'prepared.txt',peer:'Phone'});
+    assert.equal(approvals,1);
+    assert.equal(deliveredEvents.at(-1).type,'outgoing');
+    assert.ok(!deliveredEvents.some(e=>e.type==='consent'));
+
     if (platform === 'darwin') {
       assert.equal(menu[0].role, 'appMenu');
       assert.equal(menu[1].submenu[0].accelerator, 'Cmd+O');

@@ -429,26 +429,15 @@ class Engine(private val app: BeamApp) {
                 "kind" to source.kind,
             )
         s.send(s.offer!!)
-        if (s.outbound) {
-            app.state.update {
-                it.copy(
-                    consent = null,
-                    busy = true,
-                    progress = 0f,
-                    status = "Waiting for receiver to accept…",
-                )
-            }
-            approve()
-        } else {
-            app.state.update {
-                it.copy(
-                    consent = Consent(source.name, source.size, s.name, s.code, false),
-                    busy = true,
-                    progress = 0f,
-                    status = "Incoming · open AppSEND to review",
-                )
-            }
+        app.state.update {
+            it.copy(
+                consent = null,
+                busy = true,
+                progress = 0f,
+                status = "Waiting for receiver to accept…",
+            )
         }
+        approve()
     }
 
     private suspend fun message(s: Session, m: JSONObject) {
